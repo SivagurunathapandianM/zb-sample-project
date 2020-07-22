@@ -1,0 +1,39 @@
+---
+spring:
+  profiles: DEV
+zeebe:
+  client:
+    worker:
+       defaultName: spring-template-worker
+    broker:
+       contactPoint: zeebe.sco-dev.swissre.com:8090
+    security:
+       plaintext: true
+---
+spring:
+  profiles: NONPROD
+zeebe:
+  client:
+    worker:
+      defaultName: spring-template-worker
+    broker:
+      contactPoint: zeebe.sco-np.swissre.com:8090
+    security:
+      plaintext: true
+---
+spring:
+  profiles: PROD
+  application:
+    name: TemplateWorker
+  cloud:
+    config:
+      uri: https://zb-config.sco.swissre.com
+
+zeebe:
+  client:
+    worker:
+      defaultName: spring-template-worker
+    broker:
+      contactPoint: zeebe.sco.swissre.com:8090
+    security:
+      plaintext: true

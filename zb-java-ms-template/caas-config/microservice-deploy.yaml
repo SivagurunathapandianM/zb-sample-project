@@ -1,0 +1,29 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: zb-java-ms-template
+  labels:
+    app: zb-java-ms-template
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zb-java-ms-template
+  template:
+    metadata:
+      labels:
+        app: zb-java-ms-template
+    spec:
+      serviceAccountName: deploy
+      securityContext:
+        runAsUser: 1000
+      imagePullSecrets:
+        - name: tecscoci-docker-login
+      containers:
+        - image: @docker.repository@:@project.version@
+          name: zb-java-ms-template
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
+              name: http
+              protocol: TCP

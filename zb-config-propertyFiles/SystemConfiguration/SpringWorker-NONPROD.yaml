@@ -1,0 +1,9 @@
+zeebe:
+  worker:
+     defaultName: collect_money
+  client:
+     broker:
+       contactPoint:
+          zeebe.sco-np.swissre.com:8090
+     security:
+       plaintext: true

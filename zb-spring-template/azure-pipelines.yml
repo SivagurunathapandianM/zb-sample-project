@@ -1,0 +1,116 @@
+# Maven
+# Build your Java project and run tests with Apache Maven.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/java
+
+trigger:
+  batch: true
+  branches:
+    include:
+      - master
+pool:
+  name: 'SCO-Private-Pool'
+
+variables:
+  # Get Build Groups and project details
+  - group: 'SR-SCO-DEV-WE-SWISSRE-PROXY'
+  - group: 'SR-SCO-DEV-WE-AQUA-CONFIG'
+
+steps:
+  - checkout: self
+  - task: Bash@3
+    displayName: 'SNAPSHOT ReVision Hack'
+    inputs:
+      targetType: 'inline'
+      script: |
+        cd zb-spring-template
+        if [ $BUILD_SOURCEBRANCHNAME != "master" ];
+        then mvn build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.incrementalVersion}-$(date +%s);
+        fi
+      noProfile: false
+      noRc: false
+
+  - task: Maven@3
+    env:
+      ARTIFACTORY_PASS: $(artifactoryEncryptedPassword)
+    inputs:
+      mavenPomFile: 'pom.xml'
+      mavenOptions: '-Xmx3072m'
+      javaHomeOption: 'JDKVersion'
+      jdkVersionOption: '1.11'
+      jdkArchitectureOption: 'x64'
+      publishJUnitResults: true
+      testResultsFiles: '**/surefire-reports/TEST-*.xml'
+      goals: 'clean compile resources:resources package dockerfile:push helm:init helm:lint helm:package'
+
+  - task: SonarQubePrepare@4
+    inputs:
+      SonarQube: 'SonarQube ite'
+      scannerMode: 'Other'
+      projectKey: 'com.swissre.zeebe.template:zb-spring-template'
+      projectName: 'zb-spring-template'
+
+  - task: Bash@3
+    displayName: 'Get app image url'
+    inputs:
+      targetType: 'inline'
+      script: |
+        app_image=`cat target/classes/ado-version-workaround.txt`;
+        echo "##vso[task.setvariable variable=APP_IMAGE_URL]$app_image";
+      noProfile: false
+      noRc: false
+
+  - task: aquasec.aquasec.showCommits.aquasecScanner@4
+    displayName: 'Image Scanning'
+    continueOnError: true
+    inputs:
+      aquaVersion: 4.x
+      image: '$(APP_IMAGE_URL)'
+      connection: '$(aquaConnection)'
+      scanner: '$(aquaScannerImage)'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: 'target/classes/ado-version-workaround.txt'
+      ArtifactName: 'app-version'
+      publishLocation: 'Container'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: 'target/classes/setup-caas.sh'
+      ArtifactName: 'caas-setup'
+      publishLocation: 'Container'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: 'target/classes/microservice-service.yaml'
+      ArtifactName: 'caas-setup'
+      publishLocation: 'Container'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: 'target/classes/microservice-ingress.yaml'
+      ArtifactName: 'caas-setup'
+      publishLocation: 'Container'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: 'target/classes/microservice-deploy.yaml'
+      ArtifactName: 'caas-setup'
+      publishLocation: 'Container'
+  - task: PublishBuildArtifacts@1
+    inputs:
+      PathtoPublish: 'target/helm/repo'
+      ArtifactName: 'helm-chart'
+      publishLocation: 'Container'
+
+  - task: NexusIqPipelineTask@1
+    continueOnError: true
+    inputs:
+      nexusIqService: 'NexusIQ'
+      applicationId: 'zb-spring-template'
+      stage: 'Build'
+    condition: eq(variables['Build.SourceBranchName'],'master')
+    
+  - task: Bash@3
+    displayName: 'Updating Mattermost w/ Build Info'
+    inputs:
+      filePath: '/home/tecscoci/bin/buildinfo.sh' # This seems very nasty and it is. ADO does not support $HOME it seems
+      noProfile: false
+      noRc: false

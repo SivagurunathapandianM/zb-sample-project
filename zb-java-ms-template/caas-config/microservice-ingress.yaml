@@ -1,0 +1,12 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: zb-java-ms-template
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /health/*
+            backend:
+              serviceName: zb-java-ms-template
+              servicePort: 5000

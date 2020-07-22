@@ -1,0 +1,44 @@
+pool:
+  name: 'SCO-Private-Pool'
+
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+ 
+stages:
+- stage : Publish_Artifact
+  jobs:
+  - job:
+    steps:
+    - checkout: self
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publishing Artifact: kubectl command to copy property file in to pod'
+      inputs:
+        PathtoPublish: './copyPropertyFileintoPod.sh'
+        ArtifactName: 'PropertyFiles'
+        publishLocation: 'Container'
+
+    - task: Bash@3
+      displayName: 'Packaging Property Artifacts'
+      inputs:
+        targetType: 'inline'
+        script: |
+          cd ./SystemConfiguration/
+          tar zcvf ../properties-artifacts.tar.gz *
+        noProfile: false
+        noRc: false
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publishing Artifact: Property Files'
+      inputs:
+        PathtoPublish: './properties-artifacts.tar.gz'
+        ArtifactName: 'PropertyFiles'
+        publishLocation: 'Container'
+    - task: Bash@3
+      displayName: 'Updating Mattermost w/ Build Info'
+      inputs:
+          filePath: '/home/tecscoci/bin/buildinfo.sh' # This seems very nasty and it is. ADO does not support $HOME it seems
+          noProfile: false
+          noRc: false

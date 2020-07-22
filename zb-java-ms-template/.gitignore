@@ -1,0 +1,10 @@
+target/
+zeebe-microservice-template/target/
+*.iml
+.idea/
+.settings/
+.classpath
+.project
+.factorypath
+.vscode
+/bin/

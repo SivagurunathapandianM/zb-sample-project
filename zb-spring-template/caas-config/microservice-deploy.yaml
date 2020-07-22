@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zb-spring-template
+  labels:
+    app: zb-spring-template
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zb-spring-template
+  template:
+    metadata:
+      labels:
+        app: zb-spring-template
+    spec:
+      serviceAccountName: deploy
+      securityContext:
+        runAsUser: 1000
+      imagePullSecrets:
+        - name: tecscoci-docker-login
+      containers:
+        - image: @docker.repository@:@project.version@
+          name: zb-spring-template
+          imagePullPolicy: Always
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: @currentenvironment@
+            - name: INGRESS_ENV
+              value: @ingress_env@
+          ports:
+            - containerPort: 8080
+              name: http
+              protocol: TCP

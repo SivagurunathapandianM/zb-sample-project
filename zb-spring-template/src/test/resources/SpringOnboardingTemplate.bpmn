@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1aebt69" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Zeebe Modeler" exporterVersion="0.6.2">
+  <bpmn:process id="SpringOnboardingTemplate" name="SpringOnboardTemplate" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_1">
+      <bpmn:outgoing>SequenceFlow_1exlhbo</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="SpringOnboardTemplate" name="SpringOnboardTemplate">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="springTemplate" />
+        <zeebe:ioMapping>
+          <zeebe:input source="messageText" target="messageText" />
+          <zeebe:output source="statusCode" target="statusCode" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_1exlhbo</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_0npzqez</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent_14px74a">
+      <bpmn:incoming>SequenceFlow_1u5z0ee</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_0npzqez" sourceRef="SpringOnboardTemplate" targetRef="zeebeSpringOnboardTemplate" />
+    <bpmn:sequenceFlow id="SequenceFlow_1exlhbo" sourceRef="StartEvent_1" targetRef="SpringOnboardTemplate" />
+    <bpmn:serviceTask id="zeebeSpringOnboardTemplate" name="zeebeSpringOnboardTemplate">
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="zeebeSpringTemplate" />
+        <zeebe:ioMapping>
+          <zeebe:input source="messageText" target="messageText" />
+          <zeebe:output source="statusCode" target="statusCode" />
+        </zeebe:ioMapping>
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_0npzqez</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_1u5z0ee</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:sequenceFlow id="SequenceFlow_1u5z0ee" sourceRef="zeebeSpringOnboardTemplate" targetRef="EndEvent_14px74a" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="SpringOnboardingTemplate">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_1">
+        <dc:Bounds x="179" y="103" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_0dm3spw_di" bpmnElement="SpringOnboardTemplate">
+        <dc:Bounds x="282" y="81" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_14px74a_di" bpmnElement="EndEvent_14px74a">
+        <dc:Bounds x="689" y="103" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_0npzqez_di" bpmnElement="SequenceFlow_0npzqez">
+        <di:waypoint x="382" y="121" />
+        <di:waypoint x="489" y="121" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_1exlhbo_di" bpmnElement="SequenceFlow_1exlhbo">
+        <di:waypoint x="215" y="121" />
+        <di:waypoint x="282" y="121" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="ServiceTask_1cjk0wi_di" bpmnElement="zeebeSpringOnboardTemplate">
+        <dc:Bounds x="489" y="81" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1u5z0ee_di" bpmnElement="SequenceFlow_1u5z0ee">
+        <di:waypoint x="589" y="121" />
+        <di:waypoint x="689" y="121" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
