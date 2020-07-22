@@ -1,0 +1,36 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: zb-config
+  labels:
+    app: zb-config
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: zb-config
+  template:
+    metadata:
+      labels:
+        app: zb-config
+    spec:
+      serviceAccountName: deploy
+      securityContext:
+        runAsUser: 1000
+      imagePullSecrets:
+        - name: tecscoci-docker-login
+      volumes:
+        - name: config-files
+          persistentVolumeClaim:
+            claimName: config-files
+      containers:
+        - image: @docker.repository@:@project.version@
+          name: zb-config
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8888
+              name: http
+              protocol: TCP
+          volumeMounts:
+            - mountPath: "/configfiles"
+              name: config-files

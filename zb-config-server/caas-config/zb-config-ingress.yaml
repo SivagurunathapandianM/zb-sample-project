@@ -1,0 +1,13 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: zb-config
+spec:
+  rules:
+    - host: zb-config.sco-dev.swissre.com
+      http:
+        paths:
+          - path: /*
+            backend:
+              serviceName: zb-config
+              servicePort: 8888

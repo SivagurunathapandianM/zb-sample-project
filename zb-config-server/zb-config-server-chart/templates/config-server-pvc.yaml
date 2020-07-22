@@ -1,0 +1,12 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: {{ include "zb-config-server-chart.fullname" . }}-config-files
+  annotations:
+    volume.beta.kubernetes.io/storage-class: pks-default-storage
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2G

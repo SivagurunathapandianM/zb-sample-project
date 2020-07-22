@@ -1,0 +1,11 @@
+target/*
+.idea/*
+*.iml
+.idea/
+.settings/
+.classpath
+.project
+.factorypath
+.vscode
+*~
+\#*\#

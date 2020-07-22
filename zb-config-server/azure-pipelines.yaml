@@ -1,0 +1,120 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - master
+      - MI-730-DeploymentProfiling
+
+pool:
+  name: 'SCO-Private-Pool'
+
+variables:
+# Get Build Groups and project details
+- group: 'SR-SCO-DEV-WE-SCAN-CONFIG'
+
+stages:
+  - stage: Build
+    jobs:
+      - job:
+        displayName: zbConfigServerBuild
+        steps:
+          - checkout: self
+          - task: Bash@3
+            displayName: 'SNAPSHOT ReVision Hack'
+            inputs:
+              targetType: 'inline'
+              script: |
+                cd zb-config-server
+                if [ $BUILD_SOURCEBRANCHNAME != "master" ];
+                then mvn build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.incrementalVersion}-$(date +%s);
+                fi
+              noProfile: false
+              noRc: false
+
+          - task: SonarQubePrepare@4
+            inputs:
+              SonarQube: 'SonarQube'
+              scannerMode: 'Other'
+
+          - task: Maven@3
+            env:
+              ARTIFACTORY_PASS: $(artifactoryEncryptedPassword)
+            displayName: 'Maven - Master Build'
+            inputs:
+              mavenPomFile: './zb-config-server/pom.xml'
+              mavenOptions: '-Xmx8000m -Ddockerfile.username=tecscoci -Ddockerfile.password=$(tecscoci-docker-sco-artifactory)'
+              javaHomeOption: 'JDKVersion'
+              jdkVersionOption: '1.11'
+              jdkArchitectureOption: 'x64'
+              publishJUnitResults: true
+              sonarQubeRunAnalysis: false
+              effectivePomSkip: false
+              testResultsFiles: '**/surefire-reports/TEST-*.xml'
+              goals: 'clean compile resources:resources package dockerfile:push helm:init helm:lint helm:package'
+          
+          - task: Maven@3
+            displayName: 'Maven - Separated Sonar Sensor'
+            inputs:
+              mavenPomFile: './zb-config-server/pom.xml'
+              goals: 'sonar:sonar'
+              options: ''
+              javaHomeOption: 'JDKVersion'
+              jdkVersionOption: '1.11'
+              mavenVersionOption: 'Default'
+            condition: eq(variables['Build.SourceBranchName'],'master')
+
+          - task: Bash@3
+            displayName: 'Aqua Scan'
+            continueOnError: true
+            inputs:
+              targetType: 'inline'
+              script: |
+                docker run --network host --rm -i -v /var/run/docker.sock:/var/run/docker.sock docker-aqua-local.artifact.swissre.com/aqua-scanner-swissre:latest scan -H https://docker-scan.swissre.com/  -U $(aquaUser) -P $(artifactoryPass) --checkonly --html --local --collect-sensitive $(cat zb-config-server/target/classes/ado-version-workaround.txt) >aquascan.html
+              noProfile: false
+              noRc: false
+
+          - task: PublishBuildArtifacts@1
+            displayName: 'Publishing Artifact: Aqua Scan Results'
+            continueOnError: true
+            inputs:
+              PathtoPublish: './aquascan.html'
+              ArtifactName: 'aquascan'
+              publishLocation: 'Container'
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: './zb-config-server/target/classes/ado-version-workaround.txt'
+              ArtifactName: 'app-version'
+              publishLocation: 'Container'
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: './zb-config-server/target/classes/zb-config-deploy.yaml'
+              ArtifactName: 'caas-setup'
+              publishLocation: 'Container'
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: './zb-config-server/target/classes/setup-caas.sh'
+              ArtifactName: 'caas-setup'
+              publishLocation: 'Container'
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: './zb-config-server/target/helm/repo'
+              ArtifactName: 'helm-chart'
+              publishLocation: 'Container'
+              
+          - task: NexusIqPipelineTask@1
+            continueOnError: true
+            inputs:
+              nexusIqService: 'NexusIQ'
+              applicationId: 'zb-config'
+              stage: 'Build'
+
+          - task: Bash@3
+            displayName: 'Updating Mattermost w/ Build Info'
+            inputs:
+              filePath: '/home/tecscoci/bin/buildinfo.sh'
+              noProfile: false
+              noRc: false
+
